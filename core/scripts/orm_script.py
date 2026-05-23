@@ -2,6 +2,7 @@ from core.models import RestaurantModel, RatingModel,SaleModel
 from django.utils import timezone
 from django.db import connection
 from django.contrib.auth.models import User
+from django.db.models.functions import Lower
 
 
 def run():
@@ -152,7 +153,7 @@ def run():
     # print(rating.restaurant)
     # print(connection.queries)
 
-    restaurant = RestaurantModel.objects.first()
+    # restaurant = RestaurantModel.objects.first()
 
     """
     REVERSE access WITHOUT related_name:
@@ -187,7 +188,7 @@ def run():
     .first() -> the first row of each table, or None if empty.
     """
     # user = User.objects.first()
-    restaurant = RestaurantModel.objects.first()
+    # restaurant = RestaurantModel.objects.first()
 
     """
     .get_or_create() -> tries to GET a row matching ALL the given fields.
@@ -235,8 +236,8 @@ def run():
     # Rating.full_clean()
     # Rating.save()
 
-    print(restaurant.name)
-    restaurant.name="New Restaurant 1"
+    # print(restaurant.name)
+    # restaurant.name="New Restaurant 1"
     """ 
     This is like put kind of operation where all the fields are updated
     """
@@ -246,12 +247,123 @@ def run():
     """
     This is like PATCH kind of operation where only the fields are updated
     """
-    restaurant.save(update_fields=['name'])
+    # restaurant.save(update_fields=['name'])
 
    
-    print(connection.queries)
+    # print(connection.queries)
 
 # [{'sql': 'SELECT "core_restaurantmodel"."id", "core_restaurantmodel"."restaurant_type", "core_restaurantmodel"."name", "core_restaurantmodel"."website", "core_restaurantmodel"."date_opened", "core_restaurantmodel"."latitude", "core_restaurantmodel"."longitude" FROM "core_restaurantmodel" ORDER BY "core_restaurantmodel"."id" ASC LIMIT 1', 'time': '0.000'}, {'sql': 'SELECT "core_restaurantmodel"."id", "core_restaurantmodel"."restaurant_type", "core_restaurantmodel"."name", "core_restaurantmodel"."website", "core_restaurantmodel"."date_opened", "core_restaurantmodel"."latitude", "core_restaurantmodel"."longitude" FROM "core_restaurantmodel" ORDER BY "core_restaurantmodel"."id" ASC LIMIT 1', 'time': '0.000'}, {'sql': 'UPDATE "core_restaurantmodel" SET "restaurant_type" = \'IN\', "name" = \'New Restaurant 1\', "website" = \'\', "date_opened" = \'1980-01-01\', "latitude" = 99999.0, "longitude" = -74.006 WHERE "core_restaurantmodel"."id" = 1', 'time': '0.000'}]
 # [{'sql': 'SELECT "core_restaurantmodel"."id", "core_restaurantmodel"."restaurant_type", "core_restaurantmodel"."name", "core_restaurantmodel"."website", "core_restaurantmodel"."date_opened", "core_restaurantmodel"."latitude", "core_restaurantmodel"."longitude" FROM "core_restaurantmodel" ORDER BY "core_restaurantmodel"."id" ASC LIMIT 1', 'time': '0.000'}, {'sql': 'SELECT "core_restaurantmodel"."id", "core_restaurantmodel"."restaurant_type", "core_restaurantmodel"."name", "core_restaurantmodel"."website", "core_restaurantmodel"."date_opened", "core_restaurantmodel"."latitude", "core_restaurantmodel"."longitude" FROM "core_restaurantmodel" ORDER BY "core_restaurantmodel"."id" ASC LIMIT 1', 'time': '0.000'}, {'sql': 'UPDATE "core_restaurantmodel" SET "restaurant_type" = \'IN\', "name" = \'New Restaurant 1\', "website" = \'\', "date_opened" = \'1980-01-01\', "latitude" = 99999.0, "longitude" = -74.006 WHERE "core_restaurantmodel"."id" = 1', 'time': '0.000'}]
-  
+   
+    # print(connection.queries)
+
+    """
+    Filter down only chinese restaurants in the database
+    """
+    # chinese_restaurants=RestaurantModel.objects.filter(name="Pizzeria 1")
+    
+    # print(chinese_restaurants)
+    # print(chinese_restaurants.get())
+
+    """
+    exists function django orm
+    """
+
+    # italian_restaurants=RestaurantModel.objects.filter(restaurant_type=RestaurantModel.TypeChoices.ITALIAN)
+    # print(italian_restaurants.exists())
+
+    """
+    multiple conditions in django or using where operation in sql
+    """
+   
+    # chinese_restaurants=RestaurantModel.objects.filter(restaurant_type=RestaurantModel.TypeChoices.CHINESE, name__startswith="Chinese")
+
+    # print(chinese_restaurants)
+    # print(connection.queries)
+
+    # chinese=RestaurantModel.TypeChoices.CHINESE
+    # indian=RestaurantModel.TypeChoices.INDIAN
+    # italian=RestaurantModel.TypeChoices.ITALIAN
+
+    # check_types=[chinese,indian,italian]
+    # restaurants=RestaurantModel.objects.filter(restaurant_type__in=check_types)
+    # print(restaurants)
+    # print(connection.queries)
+    
+
+    """
+    Not condition in django
+    """
+    # chinese=RestaurantModel.TypeChoices.CHINESE
+    # restaurants=RestaurantModel.objects.exclude(restaurant_type=chinese)
+    # print(restaurants)
+    # print(connection.queries)
+
+    """
+    lt and gt ,lte,gte lookup in django
+    """
+
+    # restaurants=RestaurantModel.objects.filter(restaurant_type__lt=RestaurantModel.TypeChoices.CHINESE)
+    # print(restaurants)
+    # print(connection.queries)
+
+
+    """
+    order_by lookup in django
+    """
+    # restaurants=RestaurantModel.objects.order_by('name').reverse()
+    # restaurants=RestaurantModel.objects.order_by('name')
+    # restaurants=RestaurantModel.objects.order_by('-name')
+    # print(restaurants)
+    # print(connection.queries)
+   
+    """
+    Lower function in django models
+
+    """
+
+    # restaurants=RestaurantModel.objects.order_by(Lower('name'))
+    # print(restaurants)
+    # print(connection.queries)
+
+
+    """
+    Indexing slicing in django orm
+    """
+
+    # restaurants=RestaurantModel.objects.order_by('date_opened')[2:5]
+    # print(restaurants)
+    # print(connection.queries)
+
+    """
+    Earliest & latest in django orm
+    """
+
+    # restaurant=RestaurantModel.objects.latest('date_opened')
+    # restaurant=RestaurantModel.objects.earliest('date_opened')
+    # print(restaurant)
+    # print(connection.queries)
+
+    """
+    Find all the ratings for a restaurant starts with "CH"
+
+    when we do filter on foreign key django is going to do a join
+    """
+
+    # ratings=RatingModel.objects.filter(restaurant__name__startswith="CH")
+    # print(ratings)
+    # print(connection.queries)
+
+    """
+      Find all the sales for a restaurant starts with "CH"
+
+      when we do filter on foreign key django is going to do a join
+    """
+
+    sales=SaleModel.objects.filter(restaurant__name__startswith="CH")
+    print(sales)
     print(connection.queries)
+
+
+
+    

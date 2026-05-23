@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Restaurants with 5-star ratings</title>
+</head>
+<body>
+    <h1>Restaurants with 5-star ratings</h1>
+    {% if restaurants %}
+        {% for r in restaurants %}
+            <h2>{{ r.name }} ({{ r.get_restaurant_type_display }}) - opened {{ r.date_opened }}</h2>
+
+            <h3>Ratings</h3>
+            {% if r.ratings.all %}
+                <ul>
+                    {% for rt in r.ratings.all %}
+                        <li>rated {{ rt.rating }}/5</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No ratings yet.</p>
+            {% endif %}
+
+            <h3>Sales</h3>
+            {% if r.sales.all %}
+                <ul>
+                    {% for s in r.sales.all %}
+                        <li>{{ s.datetime }} — ${{ s.income }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No sales yet.</p>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p>No restaurants found.</p>
+    {% endif %}
+</body>
+</html>

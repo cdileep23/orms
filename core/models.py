@@ -32,6 +32,9 @@ class RestaurantModel(models.Model):
     latitude=models.FloatField(validators=[MinValueValidator(-90),MaxValueValidator(90)])
     longitude=models.FloatField(validators=[MinValueValidator(-180),MaxValueValidator(180)])
 
+    class Meta():
+        ordering=['date_opened']
+        get_latest_by = 'date_opened'
     def __str__(self):
         return self.name
     
