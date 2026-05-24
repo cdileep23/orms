@@ -11,11 +11,11 @@ One file per topic. I add to these as I learn.
 | 01 | [What is an ORM](01-what-is-an-orm.md) | done |
 | 02 | [Models and Fields](02-models-and-fields.md) | done |
 | 03 | [Validation (`full_clean`, validators)](03-validation.md) | done |
-| 04 | Migrations | not started |
+| 04 | [Migrations](04-migrations.md) | done |
 | 05 | [CRUD — Create, Read, Update, Delete](05-crud.md) | done |
 | 06 | [Filtering & field lookups (`.filter()`, `__gte`, `__contains`)](06-filtering.md) | done |
-| 07 | Relationships (ForeignKey, ManyToMany, OneToOne) | not started |
-| 08 | Aggregation & annotation (`Count`, `Avg`, `annotate`) | not started |
+| 07 | [Relationships (ForeignKey, ManyToMany, OneToOne)](07-relationships.md) | done |
+| 08 | [Aggregation & annotation (`Count`, `Avg`, `annotate`)](08-aggregation-annotation.md) | done |
 | 09 | [Query optimization (`select_related`, `prefetch_related`, N+1)](09-query-optimization.md) | done — *you are here* |
 
 ## How I use these notes
