@@ -31,7 +31,8 @@ class RestaurantModel(models.Model):
     date_opened=models.DateField()
     latitude=models.FloatField(validators=[MinValueValidator(-90),MaxValueValidator(90)])
     longitude=models.FloatField(validators=[MinValueValidator(-180),MaxValueValidator(180)])
-
+    capacity=models.PositiveSmallIntegerField(null=True,blank=True)
+    nickname=models.CharField(max_length=100, null=True, blank=True)
     class Meta():
         ordering=['date_opened']
         get_latest_by = 'date_opened'
@@ -44,6 +45,7 @@ class RestaurantModel(models.Model):
 
 
 class StaffModel(models.Model):
+
     name=models.CharField(max_length=100)
     restaurants=models.ManyToManyField(RestaurantModel,through='StaffRestaurantModel')
     def __str__(self):
@@ -71,9 +73,25 @@ class RatingModel(models.Model):
 class SaleModel(models.Model):
     restaurant=models.ForeignKey(RestaurantModel, on_delete=models.CASCADE,null=True,related_name='sales')
     datetime=models.DateTimeField()
-    income=models.DecimalField(max_digits=8,decimal_places=2)
+    expenditure=models.DecimalField(max_digits=8,decimal_places=2,null=True)
+    income=models.DecimalField(max_digits=8,decimal_places=2,default=0)
 
     def __str__(self):
         return f"Sale {self.income}"
+    
+class ProductModel(models.Model):
+    name=models.CharField(max_length=100)
+    number_in_stock=models.PositiveIntegerField(    )
+    def __str__(self):
+        return f"{self.name} {self.price}"
+    
+class OrderModel(models.Model):
+    product=models.ForeignKey(ProductModel, on_delete=models.CASCADE)
+    no_of_items=models.PositiveSmallIntegerField()
+
+    def __str__(self):
+        return f"{self.product.name} X {self.no_of_items}"
+    
+
 
 

@@ -3,10 +3,10 @@ from django.utils import timezone
 from django.db import connection
 
 from django.utils import timezone
-from random import randint
+from random  import uniform
 from django.db.models.functions import Upper,Lower,Length,Concat
 
-from django.db.models import Count,Avg,Min,Max,Sum,StdDev,Variance,CharField,Value
+from django.db.models import Count,Avg,Min,Max,Sum,StdDev,Variance,CharField,Value,F,Q
 
 def run():
     """
@@ -738,7 +738,66 @@ def run():
     # restaurants=RestaurantModel.objects.annotate(sum=Sum('sales__income')).values('name','sum')
     # for r in restaurants:
     #     print(r)
-    restaurants=RestaurantModel.objects.annotate(num_ratings=Avg('ratings')).values('name','num_ratings')
-    for r in restaurants:
-        print(r)
+    # restaurants=RestaurantModel.objects.annotate(num_ratings=Avg('ratings')).values('name','num_ratings')
+    # for r in restaurants:
+    #     print(r)
+
+
+    """
+    ==================== F() EXPRESSIONS ====================
+    F() lets you reference a column's current DB value directly
+    inside a query, so the update happens IN the database without
+    Python first reading the value into memory.
+
+    Why prefer F() over `rating.rating += 1`?
+      - `rating.rating += 1` does this:
+            1. SELECT the row into Python (value = 3)
+            2. Add 1 in Python              (value = 4)
+            3. UPDATE the row with 4
+        Between steps 1 and 3 another request could change the row,
+        and your write would silently overwrite it (race condition).
+
+      - `rating.rating = F('rating') + 1` does this:
+            UPDATE rating SET rating = rating + 1 WHERE id = ...
+        The increment happens atomically inside the DB - safe under
+        concurrent writes and one fewer round-trip.
+    """
+    # rating=RatingModel.objects.filter(rating=3).first()
+    # # rating.rating+=1        # unsafe: read-modify-write in Python
+    # rating.rating=F('rating')+1   # safe: increment happens in the DB
+    # rating.save()
+     
+
+    # RatingModel.objects.update(rating= F('rating') *2)
+    # print(connection.queries)
+    
+    # sales=SaleModel.objects.update(expenditure=F('income')*(0.5))
+
+    # sales=SaleModel.objects.all()
+
+    # for s in sales:
+    #     s.expenditure=uniform(5,100)
+
+    # SaleModel.objects.bulk_update(sales,fields=['expenditure'])
+
+    # sales=SaleModel.objects.filter(expenditure__gt=F('income'))
+
+    # print(sales)
+
+    # sales=SaleModel.objects.annotate(profit=F('income')-F('expenditure')).values('income','expenditure','profit')
+    # print(sales)
+
+    # sales=SaleModel.objects.aggregate(
+    #     profit= Count('id', filter=Q(income__gt=F('expenditure'))),
+    #     loss= Count('id', filter=Q(income__lt=F('expenditure'))),
+    # )
+    # print(sales)
+
+    rating=RatingModel.objects.first()
+    print(rating.rating)
+    rating.rating=F('rating')+1
+
+    rating.save()
+    rating.refresh_from_db()
+    print(rating.rating)
     print(connection.queries)

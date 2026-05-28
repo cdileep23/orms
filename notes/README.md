@@ -16,7 +16,9 @@ One file per topic. I add to these as I learn.
 | 06 | [Filtering & field lookups (`.filter()`, `__gte`, `__contains`)](06-filtering.md) | done |
 | 07 | [Relationships (ForeignKey, ManyToMany, OneToOne)](07-relationships.md) | done |
 | 08 | [Aggregation & annotation (`Count`, `Avg`, `annotate`)](08-aggregation-annotation.md) | done |
-| 09 | [Query optimization (`select_related`, `prefetch_related`, N+1)](09-query-optimization.md) | done — *you are here* |
+| 09 | [Query optimization (`select_related`, `prefetch_related`, N+1)](09-query-optimization.md) | done |
+| 10 | [`F()`, `Q()`, `Coalesce()` — DB-side expressions](10-f-q-coalesce.md) | done |
+| 11 | [`Subquery`, `OuterRef`, `Exists` — correlated subqueries](11-subquery-outerref-exists.md) | done — *you are here* |
 
 ## How I use these notes
 
