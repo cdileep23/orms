@@ -2,7 +2,10 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator,MaxValueValidator
 from django.core.exceptions import ValidationError
-
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey,GenericRelation
+from django.db.models import Q,CheckConstraint,UniqueConstraint
+from django.db.models.functions import Lower
 """
 Models required for the project
 
@@ -33,9 +36,26 @@ class RestaurantModel(models.Model):
     longitude=models.FloatField(validators=[MinValueValidator(-180),MaxValueValidator(180)])
     capacity=models.PositiveSmallIntegerField(null=True,blank=True)
     nickname=models.CharField(max_length=100, null=True, blank=True)
+    comments=GenericRelation('core.CommentModel',related_query_name='restaurant')
     class Meta():
         ordering=['date_opened']
         get_latest_by = 'date_opened'
+        constraints=[
+          models.CheckConstraint(  name='latitude_range',
+            condition=Q(latitude__range=(-90,90)),
+            violation_error_message="Latitude should be between -90 and 90"
+            ),
+          models.CheckConstraint(  name='longitude_range',
+            condition=Q(longitude__range=(-180,180)),
+            violation_error_message="Longitude should be between -180 and 180"
+            ),
+            models.UniqueConstraint(
+                Lower('name'),
+                name='check_name_unique_constraints'
+            )
+
+
+        ]
     def __str__(self):
         return self.name
     
@@ -65,9 +85,23 @@ class RatingModel(models.Model):
     # to reverse relationship we need to pass related name
     restaurant=models.ForeignKey(RestaurantModel, on_delete=models.CASCADE,related_name='ratings')
     rating=models.PositiveSmallIntegerField(validators=[MinValueValidator(1),MaxValueValidator(5)])
+    comments=GenericRelation('core.CommentModel')
 
     def __str__(self):
         return f"Rating {self.rating}"
+    
+    class Meta:
+        constraints=[
+            models.CheckConstraint(
+                name='rating_range',
+                condition=Q(rating__range=(1,5)),
+                violation_error_message='Rating should be between 1 and 5'
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'restaurant'],
+                name='unique_rating_per_user_per_restaurant'
+            )
+        ]
     
 
 class SaleModel(models.Model):
@@ -81,9 +115,9 @@ class SaleModel(models.Model):
     
 class ProductModel(models.Model):
     name=models.CharField(max_length=100)
-    number_in_stock=models.PositiveIntegerField(    )
+    number_in_stock=models.PositiveIntegerField()
     def __str__(self):
-        return f"{self.name} {self.price}"
+        return f"{self.name} ({self.number_in_stock} in stock)"
     
 class OrderModel(models.Model):
     product=models.ForeignKey(ProductModel, on_delete=models.CASCADE)
@@ -92,6 +126,11 @@ class OrderModel(models.Model):
     def __str__(self):
         return f"{self.product.name} X {self.no_of_items}"
     
+class CommentModel(models.Model):
+    text=models.TextField()
+    content_type=models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id=models.PositiveIntegerField()
+    content_object=GenericForeignKey('content_type','object_id')
 
 
 

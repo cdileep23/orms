@@ -1,9 +1,14 @@
-from django.shortcuts import render
-from core.models import RestaurantModel,RatingModel,SaleModel,StaffModel,StaffRestaurantModel
+from django.shortcuts import render, redirect
+from core.models import RestaurantModel,RatingModel,SaleModel,StaffModel,StaffRestaurantModel,ProductModel
+from core.forms import ProductOrderForm
 from django.db.models.functions import Lower
-from django.db.models import Sum,Prefetch
+from django.db.models import Sum,Prefetch,F
 # Create your views here.
 from django.utils import timezone
+from django.db import transaction
+from functools import partial
+def email_user(name):
+    print(f"email {name} to the user")
 # def index(request):
 #     """
 #     Fetch all restaurants + their ratings.
@@ -142,12 +147,90 @@ from django.utils import timezone
 #     return render(request,'index.html',context)
 
 
-def index(request):
-    jobs=StaffRestaurantModel.objects.prefetch_related('restaurant','staff')
+# def index(request):
+#     jobs=StaffRestaurantModel.objects.prefetch_related('restaurant','staff')
 
-    for job in jobs:
-        print(job.staff.name)
-        print(job.restaurant.name)
-        print(job.salary)
+#     for job in jobs:
+#         print(job.staff.name)
+#         print(job.restaurant.name)
+#         print(job.salary)
 
-    return render(request,'index.html')
+#     return render(request,'index.html')
+
+def order_product(request):
+    """
+    Order flow — two-mode view + transactional stock decrement.
+
+    The interesting bit is the WRITE path:
+        1. Wrap everything DB-changing in transaction.atomic()      -> all-or-nothing
+        2. SELECT ... FOR UPDATE on the product row                 -> row-level lock
+        3. Decrement stock                                          -> safe under concurrency
+        4. transaction.on_commit(...) for side effects (email)      -> fires only if commit succeeds
+    """
+    if request.method == 'POST':
+        form = ProductOrderForm(request.POST)
+
+        if form.is_valid():
+            """
+            transaction.atomic()
+                Opens a single DB transaction. Every write inside the block
+                either commits together at the end, or rolls back together
+                if ANY exception escapes the block. No half-written state.
+            """
+            with transaction.atomic():
+                order = form.save()
+
+                """
+                select_for_update()
+                    Emits SQL  SELECT ... FROM product WHERE id = ? FOR UPDATE;
+                    Postgres places a ROW-LEVEL write lock on that product
+                    until this transaction commits or rolls back. Any other
+                    transaction trying to SELECT FOR UPDATE / UPDATE / DELETE
+                    that same row will BLOCK until we're done.
+
+                WHY refetch with .get(pk=order.product_id) instead of using
+                order.product directly?
+                    order.product was loaded by the form BEFORE the
+                    transaction opened — it has no lock on it. To race-proof
+                    the stock decrement, we re-read the row INSIDE the
+                    transaction with select_for_update so no one else can
+                    change it between our read and our write.
+
+                Requires:
+                    - A real transaction (must be inside atomic()).
+                    - A DB that supports row locks (Postgres yes; SQLite
+                      ignores it silently — fine for dev, not real concurrency).
+                """
+                product = (
+                    ProductModel.objects
+                    .select_for_update()
+                    .get(pk=order.product_id)
+                )
+
+                """
+                With the lock held, the read-modify-write is safe.
+                Could also write this as:
+                    product.number_in_stock = F('number_in_stock') - order.no_of_items
+                    product.save()
+                Either is fine while the row is locked.
+                """
+                product.number_in_stock -= order.no_of_items
+                product.save()
+
+                """
+                transaction.on_commit(callback)
+                    Defer a side effect until AFTER the transaction commits.
+                    If the transaction rolls back, the callback never runs
+                    -> we won't email "your order is placed" for an order
+                    that didn't actually save.
+
+                We use functools.partial because on_commit takes a zero-arg
+                callable, but email_user needs the product name.
+                """
+                transaction.on_commit(partial(email_user, product.name))
+
+            return redirect('order_product')
+    else:
+        form = ProductOrderForm()
+
+    return render(request, 'order_product.html', {'form': form})

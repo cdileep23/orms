@@ -1,8 +1,10 @@
-from core.models import RestaurantModel,SaleModel,RatingModel
+from core.models import RestaurantModel,SaleModel,RatingModel,ProductModel,OrderModel
 from django.db.models import Q,F,Sum,Avg,Case,When,Count,Value,Subquery,OuterRef,Exists
 from django.db.models.functions import Coalesce
 from django.db import connection
 from django.utils import timezone
+from django.db import transaction
+import time
 def run():
     """
     ==================== Q() — COMBINING FILTERS WITH OR / NOT ====================
@@ -414,10 +416,42 @@ def run():
     To flip the question to "restaurants with NO sales in the last 5 days",
     just negate with ~Exists(...) -> WHERE NOT EXISTS (...).
     """
-    five_days_ago=timezone.now()-timezone.timedelta(days=5)
-    restaurants=RestaurantModel.objects.filter(
-        Exists(SaleModel.objects.filter(restaurant=OuterRef('pk'),datetime__gte=five_days_ago)
-        )
-    )
+    # five_days_ago=timezone.now()-timezone.timedelta(days=5)
+    # restaurants=RestaurantModel.objects.filter(
+    #     Exists(SaleModel.objects.filter(restaurant=OuterRef('pk'),datetime__gte=five_days_ago)
+    #     )
+    # )
 
-    print(restaurants)
+    # print(restaurants)
+
+    """
+    ==================== select_for_update() — ROW-LEVEL LOCKING ====================
+
+    SQL:  SELECT ... FROM product WHERE name = 'Book' FOR UPDATE;
+
+    While THIS transaction is open, Postgres places a write lock on the
+    matching product row. Any OTHER transaction that tries to:
+        - SELECT ... FOR UPDATE on the same row, or
+        - UPDATE / DELETE the same row,
+    will BLOCK and wait until we either COMMIT or ROLLBACK.
+
+    Requires an open transaction — that's why it must be inside
+    `with transaction.atomic():`. Outside a transaction, Django raises
+    TransactionManagementError.
+
+    How to SEE the lock in action:
+        Open TWO `python manage.py shell` sessions.
+        In session A, run this script (the sleep keeps the txn open 1s).
+        Inside that 1s window, in session B run:
+            from core.models import ProductModel
+            ProductModel.objects.filter(name='Book').update(number_in_stock=99)
+        Session B will block until session A's `with` block exits.
+
+    Notes:
+        - SQLite IGNORES select_for_update silently. Use Postgres for real demos.
+        - Use sparingly — locks reduce concurrency. Only lock the rows you
+          actually need to update.
+    """
+    with transaction.atomic():
+        book=ProductModel.objects.select_for_update().get(name="Book")
+        time.sleep(1)

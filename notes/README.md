@@ -18,7 +18,11 @@ One file per topic. I add to these as I learn.
 | 08 | [Aggregation & annotation (`Count`, `Avg`, `annotate`)](08-aggregation-annotation.md) | done |
 | 09 | [Query optimization (`select_related`, `prefetch_related`, N+1)](09-query-optimization.md) | done |
 | 10 | [`F()`, `Q()`, `Coalesce()` — DB-side expressions](10-f-q-coalesce.md) | done |
-| 11 | [`Subquery`, `OuterRef`, `Exists` — correlated subqueries](11-subquery-outerref-exists.md) | done — *you are here* |
+| 11 | [`Subquery`, `OuterRef`, `Exists` — correlated subqueries](11-subquery-outerref-exists.md) | done |
+| 12 | [Connecting Django to PostgreSQL](12-connect-postgres.md) | done |
+| 13 | [Transactions (`atomic`, `select_for_update`, `on_commit`)](13-transactions.md) | done |
+| 14 | [ContentTypes & Generic Relations (`GenericForeignKey`, `GenericRelation`)](14-content-types-generic-relations.md) | done |
+| 15 | [Database Constraints (`CheckConstraint`, `UniqueConstraint`)](15-database-constraints.md) | done — *you are here* |
 
 ## How I use these notes
 

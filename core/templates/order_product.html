@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Place an order</title>
+</head>
+<body>
+    <h1>Place an order</h1>
+
+    {#
+        method="post"
+            tells the browser to send form data as a POST request
+            so the view's `if request.method == 'POST':` branch fires.
+
+        {% csrf_token %}
+            inserts a hidden CSRF token. Django REQUIRES it on every
+            POST form — without it the request is rejected with 403.
+
+        {{ form.as_p }}
+            renders each field wrapped in a <p> tag (labels, inputs,
+            help text, and error messages). Quick scaffolding while
+            learning; you can render fields one-by-one for fine-grained
+            styling later.
+
+        form.non_field_errors
+            errors from a form-wide `clean()` method (none in our
+            current form, but it's good practice to surface them).
+    #}
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+        {{ form.as_p }}
+
+        <button type="submit">Order</button>
+    </form>
+</body>
+</html>
